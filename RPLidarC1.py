@@ -12,6 +12,11 @@ class RPLidar:
     HEALTH_BYTE = b'\x52'
     RESET_BYTE = b'\x40'
     
+    RESPONSE_HEALTH_BYTE = b'\x03'
+    RESPONSE_SCAN_BYTE = b'\x03'
+    
+    RESPONSE_HEADER_LENGTH = 7
+    
     def __init__(self, port, baudrate):
         self.port = port
         self.baudrate = baudrate
@@ -53,9 +58,19 @@ class RPLidar:
             self._serial.reset_input_buffer
             
         while True:
-            print(self._serial.in_waiting)
-            cur_byte = self._serial.read()
-            print(f'{bytes(cur_byte)}')
+            read_bytes = self._serial.read(self.RESPONSE_HEADER_LENGTH)
+            length = self._calculate_length(read_bytes)
+            print(read_bytes.hex(), length)
+            # print(self._serial.in_waiting)
+            # cur_byte = self._serial.read()
+            # print(f'{cur_byte.hex()}')
+            
+            
+            
+    def _calculate_length(self, response_bytes):
+        byte1, byte2, byte3 = response_bytes[4:7]
+        length = byte3 << 16 | byte2 << 8 | byte1
+        return length
         
     def healthcheck(self):
         self._send_command(self.HEALTH_BYTE)
