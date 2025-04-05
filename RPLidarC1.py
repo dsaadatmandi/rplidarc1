@@ -4,14 +4,22 @@ import time
 
 class RPLidar:
     
+    # General Protocol Bytes
     SYNC_BYTE = b'\xA5'
-    STOP_BYTE = b'\x25'
+
+    # Request Bytes
+    STOP_BYTE = b'\x25' # wait 10ms
     SCAN_BYTE = b'\x20'
     FORCE_SCAN_BYTE = b'\x21'
     INFO_BYTE = b'\x50'
-    HEALTH_BYTE = b'\x52'
-    RESET_BYTE = b'\x40'
-    
+    GET_HEALTH_BYTE = b'\x52'
+    RESET_BYTE = b'\x40' # wait 500ms
+    EXPRESS_SCAN_BYTE = b'\x82'
+    GET_INFO_BYTE = b'\x50'
+    GET_SAMPLE_RATE = b'\x59'
+    GET_LIDAR_CONF = b'\x84'
+
+    # Response Bytes
     RESPONSE_HEALTH_BYTE = b'\x03'
     RESPONSE_SCAN_BYTE = b'\x03'
     
@@ -57,23 +65,34 @@ class RPLidar:
         if self._serial.in_waiting > 0:
             self._serial.reset_input_buffer
             
-        while True:
-            read_bytes = self._serial.read(self.RESPONSE_HEADER_LENGTH)
-            length = self._calculate_length(read_bytes)
-            print(read_bytes.hex(), length)
-            # print(self._serial.in_waiting)
-            # cur_byte = self._serial.read()
-            # print(f'{cur_byte.hex()}')
+        read_bytes = self._serial.read(7)
+        length, mode = self._calculate_response_details(read_bytes)
+
+        self.logger.warning(read_bytes.hex())
+
+        print(mode)
+
+        if mode == 0:
+            return
+
+        else:
+            while True:
+                out = self._serial.read(length)
+                print(out.hex())
             
             
-            
-    def _calculate_length(self, response_bytes):
-        byte1, byte2, byte3 = response_bytes[4:7]
-        length = byte3 << 16 | byte2 << 8 | byte1
-        return length
+    def _calculate_response_details(self, response_bytes: bytearray):
+        byte1, byte2, byte3, byte4 = response_bytes[2:6]
+        composite_32_bit = byte1 | (byte2 << 8) | (byte3 << 16) | (byte4 << 24) # little endian 32 bit
+        mask_30_bit = 0b00111111_11111111_11111111_11111111 # mask with first 2 bits 0
+        mask_2_bit = 0b11
+        length = composite_32_bit & mask_30_bit # bitwise AND operation with mask
+        mode = (composite_32_bit >> 30) & mask_2_bit
+
+        return length, mode
         
     def healthcheck(self):
-        self._send_command(self.HEALTH_BYTE)
+        self._send_command(self.GET_HEALTH_BYTE)
         time.sleep(0.5)
         self._read_data()
         
@@ -86,3 +105,9 @@ class RPLidar:
         except KeyboardInterrupt:
             self._send_command(self.STOP_BYTE)
             self.disconnect()
+
+    def get_info(self):
+        self._send_command(self.GET_INFO_BYTE)
+        time.sleep(0.5)
+
+        self._read_data()
