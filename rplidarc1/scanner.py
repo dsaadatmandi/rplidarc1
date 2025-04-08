@@ -2,9 +2,9 @@ import asyncio
 import logging
 import time
 from types import CoroutineType
-from protocol import Request, Response
-from serial_handler import SerialConnection
-import protocol
+from .protocol import Request, Response
+from .serial_handler import SerialConnection
+from . import protocol
 
 
 class RPLidar:

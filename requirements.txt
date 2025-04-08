@@ -1,0 +1,6 @@
+# Core dependencies
+pyserial>=3.5
+
+# Testing dependencies
+pytest>=7.0.0
+pytest-asyncio>=0.18.0

@@ -4,7 +4,7 @@ from typing import Coroutine, Optional, Tuple, Union
 from enum import IntEnum
 
 import serial
-from utils import ByteEnum
+from .utils import ByteEnum
 
 """
 This module implements the RPLidar protocol for communication with the device.
