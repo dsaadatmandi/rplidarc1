@@ -64,9 +64,10 @@ class SerialConnection(Serial):
 
         If no connection is active, a warning will be logged but no error will be raised.
         """
-        if self.is_open:
+        if self._is_connected:
             self.logger.debug(f"Closing serial connection on port: {self.port}.")
             self.close()
+            self._is_connected = False
             return
         self.logger.warning(
             "disconnect called while there is no active serial connection. Continuing."

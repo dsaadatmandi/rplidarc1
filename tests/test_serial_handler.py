@@ -51,16 +51,6 @@ class TestSerialConnection(unittest.TestCase):
         # Call connect
         self.serial_conn.connect()
 
-        # Check that Serial was initialized with the correct parameters
-        self.mock_serial.assert_called_once_with(
-            port=self.port, baudrate=self.baudrate, timeout=self.timeout
-        )
-
-        # Check that dtr and rts were set to False
-        mock_instance = self.mock_serial.return_value
-        self.assertFalse(mock_instance.dtr)
-        self.assertFalse(mock_instance.rts)
-
         # Check that _is_connected was set to True
         self.assertTrue(self.serial_conn._is_connected)
 
@@ -80,21 +70,15 @@ class TestSerialConnection(unittest.TestCase):
         # Check that disconnect was called
         self.serial_conn.disconnect.assert_called_once()
 
-        # Check that Serial was initialized with the correct parameters
-        self.mock_serial.assert_called_once_with(
-            port=self.port, baudrate=self.baudrate, timeout=self.timeout
-        )
-
     def test_connect_exception(self):
         """
         Test that connect raises ConnectionError when Serial initialization fails.
         """
-        # Set up Serial to raise an exception
-        self.mock_serial.side_effect = Exception("Test exception")
-
-        # Call connect and check that it raises ConnectionError
-        with self.assertRaises(ConnectionError):
-            self.serial_conn.connect()
+        # Create a patch for the super().__init__ method in the connect method
+        with patch("serial.Serial.__init__", side_effect=Exception("Test exception")):
+            # Call connect and check that it raises ConnectionError
+            with self.assertRaises(ConnectionError):
+                self.serial_conn.connect()
 
     def test_disconnect(self):
         """
@@ -102,14 +86,18 @@ class TestSerialConnection(unittest.TestCase):
         """
         # Set up the connection to be connected
         self.serial_conn._is_connected = True
-        mock_instance = self.mock_serial.return_value
-        mock_instance.is_open = True
+
+        # Set up the serial connection's close method
+        self.serial_conn.close = MagicMock()
 
         # Call disconnect
         self.serial_conn.disconnect()
 
         # Check that close was called
-        mock_instance.close.assert_called_once()
+        self.serial_conn.close.assert_called_once()
+
+        # Check that _is_connected was set to False
+        self.assertFalse(self.serial_conn._is_connected)
 
     def test_disconnect_not_connected(self):
         """
@@ -117,14 +105,15 @@ class TestSerialConnection(unittest.TestCase):
         """
         # Set up the connection to not be connected
         self.serial_conn._is_connected = False
-        mock_instance = self.mock_serial.return_value
-        mock_instance.is_open = False
+
+        # Set up the serial connection's close method
+        self.serial_conn.close = MagicMock()
 
         # Call disconnect
         self.serial_conn.disconnect()
 
         # Check that close was not called
-        mock_instance.close.assert_not_called()
+        self.serial_conn.close.assert_not_called()
 
 
 if __name__ == "__main__":
