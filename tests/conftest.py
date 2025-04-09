@@ -3,12 +3,25 @@ Pytest configuration and fixtures for the RPLidarC1 tests.
 """
 
 import asyncio
+import os
 import pytest
 from unittest.mock import MagicMock, patch
+from .port_utils import is_port_available
+
+
+@pytest.fixture(scope="session")
+def port_available():
+    """
+    Fixture that checks if the default serial port is available.
+
+    Returns:
+        bool: True if the port exists, False otherwise.
+    """
+    return is_port_available("/dev/ttyUSB0")
 
 
 @pytest.fixture
-def mock_serial():
+def mock_serial(port_available):
     """
     Fixture that provides a mock serial connection.
 

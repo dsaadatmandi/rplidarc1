@@ -9,6 +9,7 @@ import asyncio
 from unittest.mock import MagicMock, patch
 from rplidarc1.scanner import RPLidar
 from rplidarc1 import protocol
+from .port_utils import skip_if_no_port
 
 
 class TestRPLidar(unittest.TestCase):
@@ -54,6 +55,7 @@ class TestRPLidar(unittest.TestCase):
         self.request_patcher.stop()
         self.response_patcher.stop()
 
+    @skip_if_no_port("/dev/ttyUSB0")
     def test_init(self):
         """
         Test that RPLidar initializes correctly.
@@ -79,6 +81,7 @@ class TestRPLidar(unittest.TestCase):
         self.assertIsInstance(self.lidar.output_queue, asyncio.Queue)
         self.assertIsNone(self.lidar.output_dict)
 
+    @skip_if_no_port("/dev/ttyUSB0")
     def test_healthcheck(self):
         """
         Test that healthcheck correctly checks the health status of the device.
@@ -106,6 +109,7 @@ class TestRPLidar(unittest.TestCase):
             serial=self.mock_serial, length=3
         )
 
+    @skip_if_no_port("/dev/ttyUSB0")
     def test_healthcheck_no_response(self):
         """
         Test that healthcheck raises ConnectionError when no response is received.
@@ -117,6 +121,7 @@ class TestRPLidar(unittest.TestCase):
         with self.assertRaises(ConnectionError):
             self.lidar.healthcheck()
 
+    @skip_if_no_port("/dev/ttyUSB0")
     def test_healthcheck_wrong_type(self):
         """
         Test that healthcheck raises TypeError when the response is not bytes.
@@ -128,6 +133,7 @@ class TestRPLidar(unittest.TestCase):
         with self.assertRaises(TypeError):
             self.lidar.healthcheck()
 
+    @skip_if_no_port("/dev/ttyUSB0")
     def test_healthcheck_error_status(self):
         """
         Test that healthcheck raises Exception when the device reports an error.
@@ -141,6 +147,7 @@ class TestRPLidar(unittest.TestCase):
         with self.assertRaises(Exception):
             self.lidar.healthcheck()
 
+    @skip_if_no_port("/dev/ttyUSB0")
     def test_shutdown(self):
         """
         Test that shutdown correctly shuts down the device.
@@ -162,6 +169,7 @@ class TestRPLidar(unittest.TestCase):
         # Check that the serial connection was disconnected
         self.mock_serial.disconnect.assert_called_once()
 
+    @skip_if_no_port("/dev/ttyUSB0")
     def test_reset(self):
         """
         Test that reset correctly resets the device.
@@ -197,6 +205,7 @@ class TestRPLidar(unittest.TestCase):
         with self.assertRaises(NotImplementedError):
             self.lidar.get_info()
 
+    @skip_if_no_port("/dev/ttyUSB0")
     def test_simple_scan(self):
         """
         Test that simple_scan correctly initiates a scan.
@@ -253,6 +262,7 @@ class TestRPLidar(unittest.TestCase):
 
         asyncio.run(run_coroutine())
 
+    @skip_if_no_port("/dev/ttyUSB0")
     def test_simple_scan_with_dict(self):
         """
         Test that simple_scan correctly initializes the output dictionary.
@@ -299,6 +309,7 @@ class TestRPLidar(unittest.TestCase):
 
         asyncio.run(run_coroutine())
 
+    @skip_if_no_port("/dev/ttyUSB0")
     def test_simple_scan_wrong_mode(self):
         """
         Test that simple_scan raises Exception when the response mode is not MUTLI_RESPONSE.
@@ -317,6 +328,7 @@ class TestRPLidar(unittest.TestCase):
         with self.assertRaises(Exception):
             asyncio.run(self.lidar.simple_scan())
 
+    @skip_if_no_port("/dev/ttyUSB0")
     def test_simple_scan_wrong_return_type(self):
         """
         Test that simple_scan raises TypeError when handle_response does not return a coroutine.
@@ -338,6 +350,7 @@ class TestRPLidar(unittest.TestCase):
         with self.assertRaises(TypeError):
             asyncio.run(self.lidar.simple_scan())
 
+    @skip_if_no_port("/dev/ttyUSB0")
     def test_clear_input_buffer(self):
         """
         Test that _clear_input_buffer correctly clears the input buffer.
@@ -365,6 +378,7 @@ class TestRPLidarAsync:
     """
 
     @pytest.mark.asyncio
+    @skip_if_no_port("/dev/ttyUSB0")
     async def test_init_async(self, mock_serial):
         """
         Test that RPLidar initializes correctly in async context and handles healthcheck properly.
@@ -406,6 +420,7 @@ class TestRPLidarAsync:
             assert lidar.output_dict is None
 
     @pytest.mark.asyncio
+    @skip_if_no_port("/dev/ttyUSB0")
     async def test_healthcheck_no_response_async(self, mock_serial):
         """
         Test that healthcheck raises ConnectionError when no response is received in async context.
@@ -428,6 +443,7 @@ class TestRPLidarAsync:
                 RPLidar(port="/dev/ttyUSB0", baudrate=460800, timeout=0.2)
 
     @pytest.mark.asyncio
+    @skip_if_no_port("/dev/ttyUSB0")
     async def test_healthcheck_wrong_type_async(self, mock_serial):
         """
         Test that healthcheck raises TypeError when the response is not bytes in async context.
@@ -450,6 +466,7 @@ class TestRPLidarAsync:
                 RPLidar(port="/dev/ttyUSB0", baudrate=460800, timeout=0.2)
 
     @pytest.mark.asyncio
+    @skip_if_no_port("/dev/ttyUSB0")
     async def test_healthcheck_error_status_async(self, mock_serial):
         """
         Test that healthcheck raises Exception when the device reports an error in async context.
@@ -472,6 +489,7 @@ class TestRPLidarAsync:
                 RPLidar(port="/dev/ttyUSB0", baudrate=460800, timeout=0.2)
 
     @pytest.mark.asyncio
+    @skip_if_no_port("/dev/ttyUSB0")
     async def test_simple_scan_async(self, mock_serial, mock_stop_event, mock_queue):
         """
         Test that simple_scan correctly processes scan data asynchronously.

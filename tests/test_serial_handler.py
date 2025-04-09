@@ -3,8 +3,10 @@ Tests for the serial_handler module.
 """
 
 import unittest
+import pytest
 from unittest.mock import MagicMock, patch
 from rplidarc1.serial_handler import SerialConnection
+from .port_utils import skip_if_no_port
 
 
 class TestSerialConnection(unittest.TestCase):
@@ -44,6 +46,7 @@ class TestSerialConnection(unittest.TestCase):
         # self.assertEqual(self.serial_conn.kwargs, {"timeout": self.timeout})
         # self.assertFalse(self.serial_conn._is_connected)
 
+    @skip_if_no_port("/dev/ttyUSB0")
     def test_connect(self):
         """
         Test that connect correctly initializes the serial connection.
@@ -70,6 +73,7 @@ class TestSerialConnection(unittest.TestCase):
         # Check that disconnect was called
         self.serial_conn.disconnect.assert_called_once()
 
+    @skip_if_no_port("/dev/ttyUSB0")
     def test_connect_exception(self):
         """
         Test that connect raises ConnectionError when Serial initialization fails.
@@ -80,6 +84,7 @@ class TestSerialConnection(unittest.TestCase):
             with self.assertRaises(ConnectionError):
                 self.serial_conn.connect()
 
+    @skip_if_no_port("/dev/ttyUSB0")
     def test_disconnect(self):
         """
         Test that disconnect correctly closes the serial connection.
@@ -99,6 +104,7 @@ class TestSerialConnection(unittest.TestCase):
         # Check that _is_connected was set to False
         self.assertFalse(self.serial_conn._is_connected)
 
+    @skip_if_no_port("/dev/ttyUSB0")
     def test_disconnect_not_connected(self):
         """
         Test that disconnect handles the case where no connection is active.

@@ -46,6 +46,26 @@ def run_tests():
     # Change to the script directory
     os.chdir(script_dir)
 
+    # Check if the port exists
+    port_exists = os.path.exists("/dev/ttyUSB0")
+
+    # Check if environment variable is already set (for manual testing)
+    env_available = os.environ.get("RPLIDAR_PORT_AVAILABLE")
+    if env_available is not None:
+        port_available = env_available == "1"
+        print(f"Using environment setting: RPLIDAR_PORT_AVAILABLE={env_available}")
+    else:
+        # Set based on port existence
+        port_available = port_exists
+        os.environ["RPLIDAR_PORT_AVAILABLE"] = "1" if port_available else "0"
+
+    if not port_available:
+        print(
+            "Warning: /dev/ttyUSB0 port not available. Tests requiring the port will be skipped."
+        )
+    else:
+        print("Port /dev/ttyUSB0 is available. All tests will run.")
+
     # Run pytest with the specified arguments
     result = subprocess.run(
         ["pytest", "-v"],
