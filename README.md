@@ -20,7 +20,7 @@ A Python library for interfacing with the RPLidar C1 360-degree laser scanner. T
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/rplidarc1.git
+git clone https://github.com/dsaadatmandi/rplidarc1.git
 cd rplidarc1
 
 # Install dependencies
