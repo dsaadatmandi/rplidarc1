@@ -57,6 +57,7 @@ class TestSerialConnection(unittest.TestCase):
         # Check that _is_connected was set to True
         self.assertTrue(self.serial_conn._is_connected)
 
+    @skip_if_no_port("/dev/ttyUSB0")
     def test_connect_already_connected(self):
         """
         Test that connect handles the case where a connection is already active.
