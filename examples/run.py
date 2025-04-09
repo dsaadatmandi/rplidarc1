@@ -1,4 +1,4 @@
-from scanner import RPLidar
+from rplidarc1 import RPLidar
 import asyncio
 import logging
 import time

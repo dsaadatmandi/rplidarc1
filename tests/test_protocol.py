@@ -4,7 +4,7 @@ Tests for the protocol module.
 
 import unittest
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, AsyncMock
 from rplidarc1.protocol import (
     CommonBytes,
     RequestBytes,
@@ -156,6 +156,9 @@ class TestResponse:
         """
         Test that multi_response_handler correctly processes multiple responses.
         """
+        # Set up async queue
+        mock_queue = AsyncMock()
+
         # Set up the mock to return a valid scan response
         mock_serial.read.return_value = b"\x3c\x5b\x01\x22\x01"
         mock_serial.in_waiting = 10
@@ -181,7 +184,7 @@ class TestResponse:
         Test that _parse_simple_scan_result correctly parses scan data.
         """
         # Quality: 15, Angle: 45.33, Distance: 1250mm
-        response = b"\x3c\x5b\x01\x22\x01"
+        response = b"\x3c\x55\x16\x88\x13"
 
         quality, angle, distance = Response._parse_simple_scan_result(response)
 
@@ -196,15 +199,15 @@ class TestResponse:
         # Length: 5, Mode: 0 (SINGLE_RESPONSE)
         descriptor = b"\xa5\x5a\x05\x00\x00\x00\x00"
 
-        length, mode = Response._calculate_request_details(descriptor[2:6])
+        length, mode = Response._calculate_request_details(descriptor)
 
         assert length == 5
         assert mode == 0
 
         # Length: 5, Mode: 1 (MUTLI_RESPONSE)
-        descriptor = b"\xa5\x5a\x05\x00\x00\x00\x40"
+        descriptor = b"\xa5\x5a\x05\x00\x00\x40\x40"
 
-        length, mode = Response._calculate_request_details(descriptor[2:6])
+        length, mode = Response._calculate_request_details(descriptor)
 
         assert length == 5
         assert mode == 1

@@ -31,6 +31,7 @@ class SerialConnection(Serial):
         self.kwargs = kwargs
 
         self._is_connected = False
+        self.is_open = False
 
     def connect(self):
         """
@@ -55,6 +56,7 @@ class SerialConnection(Serial):
             self.dtr = False
             self.rts = False
             self._is_connected = True
+            self.is_open = True
         except Exception as e:
             raise ConnectionError(e)
 
@@ -68,6 +70,7 @@ class SerialConnection(Serial):
             self.logger.debug(f"Closing serial connection on port: {self.port}.")
             self.close()
             self._is_connected = False
+            self.is_open = False
             return
         self.logger.warning(
             "disconnect called while there is no active serial connection. Continuing."
