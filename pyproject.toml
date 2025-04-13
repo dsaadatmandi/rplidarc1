@@ -1,0 +1,23 @@
+[project]
+name = "rplidarc1"
+version = "0.1.2"
+description = "A high-performance Python library for interfacing with the RPLidar C1 360-degree laser scanner. This library provides a fully asynchronous API for non-blocking operation, enabling efficient control of the RPLidar device and real-time processing of scan data. Built with modern Python async/await syntax and designed with minimal external dependencies (only pyserial required), it offers a lightweight yet powerful solution for robotics and sensing applications."
+authors = [
+    {name = "David Milad Saadatmandi",email = "davidmilad@gmail.com"}
+]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pyserial (>=3.5)"
+]
+
+[tool.poetry]
+
+[tool.poetry.group.dev.dependencies]
+pytest = ">=7.0.0"
+pytest-asyncio = ">=0.18.0"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

@@ -1,3 +1,4 @@
+import pprint
 from rplidarc1 import RPLidar
 import asyncio
 import logging
@@ -24,11 +25,12 @@ async def main(lidar: RPLidar):
         lidar (RPLidar): An initialized RPLidar instance.
     """
     async with asyncio.TaskGroup() as tg:
-        tg.create_task(wait_and_stop(5, lidar.stop_event))
+        tg.create_task(wait_and_stop(10, lidar.stop_event))
         tg.create_task(queue_printer(lidar.output_queue, lidar.stop_event))
         tg.create_task(lidar.simple_scan(make_return_dict=True))
 
-    print(lidar.output_dict)
+    if lidar.output_dict:
+        pprint.pp(sorted(lidar.output_dict.items()))
     lidar.reset()
 
 
@@ -74,5 +76,7 @@ if __name__ == "__main__":
     try:
         asyncio.run(main(lidar))
     except KeyboardInterrupt:
+        pass
+    finally:
         time.sleep(1)
         lidar.reset()

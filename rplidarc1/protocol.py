@@ -50,7 +50,7 @@ class ResponseBytes(ByteEnum):
 
     RESPONSE_SYNC_BYTE = b"\x5a"
     RESPONSE_HEALTH_BYTE = b"\x03"
-    RESPONSE_SCAN_BYTE = b"\x03"
+    RESPONSE_SCAN_BYTE = b"\x81"
 
 
 class ResponseMode(IntEnum):
@@ -148,9 +148,11 @@ class Response:
         descriptor = serial.read(Response.RESPONSE_DESCRIPTOR_LENGTH)
         Response._check_response_sync_bytes(descriptor)
 
-        length, mode = Response._calculate_request_details(descriptor)
+        length, mode, check = Response._calculate_request_details(descriptor)
 
         response_mode = ResponseMode(mode)
+
+        Response.logger.warning(f"In waiting: {serial.in_waiting}")
 
         return length, response_mode
 
@@ -229,24 +231,59 @@ class Response:
                 indexed by angle. If None, results are only added to the queue.
         """
         Response.logger.debug("Creating multiresponse coroutine.")
+        byte_error_handling = False
+        data_out_buffer: bytes = bytes(0)
         while not stop_event.is_set():
-            if serial.in_waiting == 0:
-                await asyncio.sleep(0.5)
-                continue
-            if serial.in_waiting < 10:
-                Response.logger.debug("Worker sleeping")
+            if serial.in_waiting < 5:
+                Response.logger.debug("Waiting for data.")
                 await asyncio.sleep(0.1)
-            quality, angle, distance = Response._parse_simple_scan_result(
-                serial.read(length)
-            )
+                continue
+
+            if not byte_error_handling:
+                data_out_buffer = serial.read(length)
+            elif data_out_buffer:
+                data_out_buffer = data_out_buffer[1:] + serial.read(1)
+
+            if not Response._check_byte_alignment(
+                data_out_buffer[0], data_out_buffer[1]
+            ):
+                byte_error_handling = True
+                Response.logger.warning(
+                    "Verification bytes not matching. Continuing one byte along."
+                )
+                continue
+            else:
+                byte_error_handling = False
+
+            parsed_tuple = Response._parse_simple_scan_result(data_out_buffer)
+            if parsed_tuple is None:
+                continue
+            quality, angle, distance = parsed_tuple
             distance = None if distance == 0 else distance
             if output_dict is not None:
                 output_dict[angle] = distance
             await output_queue.put({"q": quality, "a_deg": angle, "d_mm": distance})
         output_queue.task_done()
+        Response.logger.info("Completed processing.")
+        await asyncio.sleep(0)
 
     @staticmethod
-    def _parse_simple_scan_result(response: bytes) -> Tuple[int, float, float]:
+    def _check_byte_alignment(b1: int, b2: int):
+        control_s_bit = b1 & 0b1
+        control_s_bar_bit = (b1 >> 1) & 0b1
+        if control_s_bit == control_s_bar_bit:
+            Response.logger.warning("S bit verification failed. Realigning.")
+            return False
+        control_c_bit = b2 & 0b1
+        if control_c_bit != 1:
+            Response.logger.warning("C bit verification failed. Realigning.")
+            return False
+        return True
+
+    @staticmethod
+    def _parse_simple_scan_result(
+        response: bytes,
+    ) -> Optional[Tuple[int, float, float]]:
         """
         Parse a simple scan result from the RPLidar device.
 
@@ -264,6 +301,9 @@ class Response:
         angle = round(
             (round(angle * 3) / 3), 2
         )  # round to closest 0.33 which is precision of rplidarc1
+        if angle >= 360:
+            Response.logger.error(f"calculated angle {angle} from {response}")
+            return None
         distance = (response[3] | (response[4] << 8)) / 4
         return quality, angle, distance
 
@@ -284,7 +324,9 @@ class Response:
             raise ValueError
 
     @staticmethod
-    def _calculate_request_details(descriptor: bytes) -> Tuple[int, int]:
+    def _calculate_request_details(
+        descriptor: bytes,
+    ) -> Tuple[int, int, Optional[ResponseBytes]]:
         """
         Calculate the length and mode from the response descriptor.
 
@@ -295,7 +337,7 @@ class Response:
             Tuple[int, int]: A tuple containing the length of the response data
                 and the response mode (0 for single, 1 for multi).
         """
-        b1, b2, b3, b4 = descriptor[2:6]
+        b1, b2, b3, b4, b5 = descriptor[2:7]
         composite_32_bit = (
             b1 | (b2 << 8) | (b3 << 16) | (b4 << 24)
         )  # little endian 32 bit
@@ -306,7 +348,8 @@ class Response:
             composite_32_bit >> 30
         ) & mask_2_bit  # right shift to get 2 bit and mask
 
-        return length, mode
+        check = ResponseBytes.RESPONSE_SCAN_BYTE if b5 == 129 else None
+        return length, mode, check
 
     @staticmethod
     def parse_error_code(response: bytes) -> int:
