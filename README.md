@@ -10,6 +10,8 @@ A Python library for interfacing with the RPLidar C1 360-degree laser scanner. T
 - Device reset functionality
 - Scan data processing with angle and distance measurements
 - Support for both queue-based and dictionary-based data output
+- Robust byte alignment handling for reliable data parsing
+- Improved asynchronous data processing with error recovery
 
 ## Requirements
 
@@ -141,6 +143,26 @@ Scan data is provided in the following format:
     "q": 15          # Quality of the measurement (0-63)
 }
 ```
+
+## Advanced Features
+
+### Byte Alignment Handling
+
+The library implements robust byte alignment verification to ensure reliable data parsing from the RPLidar device. The protocol requires specific bit patterns for proper data alignment:
+
+- The S bit (least significant bit of the first byte) and S̄ bit (second least significant bit of the first byte) must be different (one 0, one 1).
+- The C bit (least significant bit of the second byte) must be set to 1.
+
+When misalignment is detected, the library automatically realigns the data stream by shifting one byte at a time until proper alignment is restored. This ensures that scan data is accurately parsed even when communication errors occur.
+
+### Improved Asynchronous Processing
+
+The library uses modern asyncio features to provide efficient non-blocking operation:
+
+- Utilizes asyncio.TaskGroup for structured concurrency
+- Implements error recovery mechanisms to handle communication interruptions
+- Provides both queue-based and dictionary-based data output options
+- Uses asyncio.Event for clean termination of scanning operations
 
 ## Project Structure
 

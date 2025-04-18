@@ -42,7 +42,7 @@ class TestProtocolEnums(unittest.TestCase):
         """
         self.assertEqual(ResponseBytes.RESPONSE_SYNC_BYTE, b"\x5a")
         self.assertEqual(ResponseBytes.RESPONSE_HEALTH_BYTE, b"\x03")
-        self.assertEqual(ResponseBytes.RESPONSE_SCAN_BYTE, b"\x03")
+        self.assertEqual(ResponseBytes.RESPONSE_SCAN_BYTE, b"\x81")
 
     def test_response_mode(self):
         """
@@ -160,7 +160,7 @@ class TestResponse:
         mock_queue = AsyncMock()
 
         # Set up the mock to return a valid scan response
-        mock_serial.read.return_value = b"\x3c\x5b\x01\x22\x01"
+        mock_serial.read.return_value = b"\x3d\x5b\x01\x22\x01"
         mock_serial.in_waiting = 10
 
         # Set up the stop event to be set after one iteration
@@ -186,7 +186,11 @@ class TestResponse:
         # Quality: 15, Angle: 45.33, Distance: 1250mm
         response = b"\x3c\x55\x16\x88\x13"
 
-        quality, angle, distance = Response._parse_simple_scan_result(response)
+        result = Response._parse_simple_scan_result(response)
+
+        assert result is not None
+
+        quality, angle, distance = result
 
         assert quality == 15
         assert angle == 45.33
@@ -199,18 +203,20 @@ class TestResponse:
         # Length: 5, Mode: 0 (SINGLE_RESPONSE)
         descriptor = b"\xa5\x5a\x05\x00\x00\x00\x00"
 
-        length, mode = Response._calculate_request_details(descriptor)
+        length, mode, check = Response._calculate_request_details(descriptor)
 
         assert length == 5
         assert mode == 0
+        assert check == None
 
         # Length: 5, Mode: 1 (MUTLI_RESPONSE)
         descriptor = b"\xa5\x5a\x05\x00\x00\x40\x40"
 
-        length, mode = Response._calculate_request_details(descriptor)
+        length, mode, check = Response._calculate_request_details(descriptor)
 
         assert length == 5
         assert mode == 1
+        assert check == None
 
     def test_parse_error_code(self):
         """

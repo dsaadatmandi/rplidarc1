@@ -1,7 +1,7 @@
 [project]
 name = "rplidarc1"
-version = "0.1.2"
-description = "A high-performance Python library for interfacing with the RPLidar C1 360-degree laser scanner. This library provides a fully asynchronous API for non-blocking operation, enabling efficient control of the RPLidar device and real-time processing of scan data. Built with modern Python async/await syntax and designed with minimal external dependencies (only pyserial required), it offers a lightweight yet powerful solution for robotics and sensing applications."
+version = "0.1.3"
+description = "Asynchronous Python library for RPLidar C1 laser scanners with robust data handling, error recovery, and minimal dependencies (pyserial only). Designed for efficient robotics and sensing applications."
 authors = [
     {name = "David Milad Saadatmandi",email = "davidmilad@gmail.com"}
 ]

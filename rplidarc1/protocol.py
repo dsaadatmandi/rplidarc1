@@ -269,6 +269,21 @@ class Response:
 
     @staticmethod
     def _check_byte_alignment(b1: int, b2: int):
+        """
+        Check if the bytes are properly aligned according to the RPLidar protocol.
+
+        The RPLidar protocol requires specific bit patterns for proper data alignment:
+        - The S bit (least significant bit of the first byte) and S̄ bit (second least
+          significant bit of the first byte) must be different (one 0, one 1).
+        - The C bit (least significant bit of the second byte) must be set to 1.
+
+        Args:
+            b1 (int): The first byte to check.
+            b2 (int): The second byte to check.
+
+        Returns:
+            bool: True if the bytes are properly aligned, False otherwise.
+        """
         control_s_bit = b1 & 0b1
         control_s_bar_bit = (b1 >> 1) & 0b1
         if control_s_bit == control_s_bar_bit:
@@ -301,8 +316,10 @@ class Response:
         angle = round(
             (round(angle * 3) / 3), 2
         )  # round to closest 0.33 which is precision of rplidarc1
-        if angle >= 360:
-            Response.logger.error(f"calculated angle {angle} from {response}")
+        if angle > 360:
+            Response.logger.error(
+                f"calculated angle {angle} from {response}. Angles should not be >360 so this result will be ignored."
+            )
             return None
         distance = (response[3] | (response[4] << 8)) / 4
         return quality, angle, distance
