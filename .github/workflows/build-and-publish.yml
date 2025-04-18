@@ -1,0 +1,36 @@
+
+name: Build and publish
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+    publish-pypi:
+
+        runs-on: ubuntu-latest
+        strategy:
+          fail-fast: false
+
+        steps:
+        - uses: actions/checkout@v4
+
+        - name: Set up Python
+          uses: actions/setup-python@v3
+          with:
+            python-version: 3.13
+
+        - name: Install Poetry
+          uses: snok/install-poetry@v1
+          with:
+            version: 2.1.2
+            virtualenvs-create: true
+
+        - name: Build package
+          env:
+            PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+          run: |
+            poetry build
+            poetry config pypi-token.pypi $PYPI_TOKEN
+            poetry publish
+
